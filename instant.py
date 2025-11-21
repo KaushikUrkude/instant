@@ -1,7 +1,8 @@
 import os
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from openai import OpenAI
+
+from google import genai  # Gemini SDK
 
 app = FastAPI()
 
@@ -11,32 +12,43 @@ def health():
 
 @app.get("/", response_class=HTMLResponse)
 def instant():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return HTMLResponse(
-            content="<p>Server error: OPENAI_API_KEY is not set.</p>",
+            content="<p>Server error: GEMINI_API_KEY is not set on the server.</p>",
             status_code=500,
         )
 
-    client = OpenAI(api_key=api_key)
+    # Create Gemini client
+    client = genai.Client(api_key=api_key)
 
-    message = """
-    You are on a website that has just been deployed to production for the first time!
-    Please reply with an enthusiastic announcement to welcome visitors to the site,
-    explaining that it is live on production for the first time!
-    """
+    prompt = """
+You are on a website that has just been deployed to production for the first time!
+Please reply with an enthusiastic announcement to welcome visitors to the site,
+explaining that it is live on production for the first time!
+"""
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # 🔥 Use valid model
-            messages=[{"role": "user", "content": message}],
+        # Call a free-tier Gemini model (text model)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",   # good free-tier model
+            contents=prompt,
         )
 
-        reply = response.choices[0].message.content.replace("\n", "<br/>")
-        return HTMLResponse(content=f"<html><body><p>{reply}</p></body></html>")
+        # response.text aggregates the model output text
+        reply = response.text.replace("\n", "<br/>")
+
+        html = f"""
+        <html>
+          <head><title>Live in an Instant!</title></head>
+          <body><p>{reply}</p></body>
+        </html>
+        """
+        return HTMLResponse(content=html)
 
     except Exception as e:
+        # Show error to help debug if something goes wrong
         return HTMLResponse(
-            content=f"<p>Server error calling OpenAI: {e}</p>",
+            content=f"<p>Server error calling Gemini API: {e}</p>",
             status_code=500,
         )
