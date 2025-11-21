@@ -5,36 +5,38 @@ from openai import OpenAI
 
 app = FastAPI()
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/", response_class=HTMLResponse)
 def instant():
-    # Initialize OpenAI client with API Key from environment variable
-    client = OpenAI(api_key=os.getenv("Open_AI_Key"))
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return HTMLResponse(
+            content="<p>Server error: OPENAI_API_KEY is not set.</p>",
+            status_code=500,
+        )
+
+    client = OpenAI(api_key=api_key)
 
     message = """
     You are on a website that has just been deployed to production for the first time!
-    Please reply with an enthusiastic announcement to welcome visitors to the site, 
+    Please reply with an enthusiastic announcement to welcome visitors to the site,
     explaining that it is live on production for the first time!
     """
 
-    messages = [{"role": "user", "content": message}]
-    
-    # Use your requested model
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # 🔥 Use valid model
+            messages=[{"role": "user", "content": message}],
+        )
 
-    reply = response.choices[0].message.content.replace("\n", "<br/>")
+        reply = response.choices[0].message.content.replace("\n", "<br/>")
+        return HTMLResponse(content=f"<html><body><p>{reply}</p></body></html>")
 
-    html = f"""
-    <html>
-        <head>
-            <title>Live in an Instant!</title>
-        </head>
-        <body>
-            <p>{reply}</p>
-        </body>
-    </html>
-    """
-
-    return html
+    except Exception as e:
+        return HTMLResponse(
+            content=f"<p>Server error calling OpenAI: {e}</p>",
+            status_code=500,
+        )
