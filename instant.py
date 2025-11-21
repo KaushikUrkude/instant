@@ -23,9 +23,7 @@ def instant():
     client = genai.Client(api_key=api_key)
 
     prompt = """
-You are on a website that has just been deployed to production for the first time!
-Please reply with an enthusiastic announcement to welcome visitors to the site,
-explaining that it is live on production for the first time!
+summary for lion
 """
 
     try:
