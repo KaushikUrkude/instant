@@ -20,7 +20,7 @@ def instant():
     
     # Use your requested model
     response = client.chat.completions.create(
-        model="gpt-5.1-chat-latest",
+        model="gpt-4o-mini",
         messages=messages
     )
 
